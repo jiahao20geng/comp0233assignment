@@ -29,23 +29,24 @@ class City:
         self.lat=lat
         self.lon=lon
     
-    def distance_to(self, other: 'City') -> float: #一个城市到另一个城市的距离
+    #the distance from one city to another
+    def distance_to(self, other: 'City') -> float: 
         
         lat1=self.lat
         lon1=self.lon
         lat2=other.lat
         lon2=other.lon
         R=6371
-        distance=2*R*math.asin(math.sqrt(math.sin((lat2-lat1)/2)**2+math.cos(lat1)*math.cos(lat2)*math.sin((lon2-lon1)/2)**2))
+        distance=2*R*math.asin(math.sqrt(math.sin((lat2*math.pi/180-lat1*math.pi/180)/2)**2+math.cos(lat1*math.pi/180)*math.cos(lat2*math.pi/180)*(math.sin((lon2*math.pi/180-lon1*math.pi/180)/2)**2)))
         return distance
     
-    def co2_to(self, other: 'City') -> float:#一个城市到另一个城市排放的CO2
-       
+    #the total CO2 emitted by all the attendees from one city to another
+    def co2_to(self,other:'City') -> float:
         if self.distance_to(other)<=1000:
-            co2=0.2**self.attendee*self.distance_to(other)
-        elif self.distance_to(other)>1000 and self.distance_to(other)<=8000:
+            co2=0.2*self.attendee*self.distance_to(other)
+        if self.distance_to(other)>1000 and self.distance_to(other)<=8000:
             co2=0.25*self.attendee*self.distance_to(other)
-        else:
+        if self.distance_to(other)>8000:
             co2=0.3*self.attendee*self.distance_to(other)
         return co2
         
@@ -53,27 +54,31 @@ class CityCollection:
     def __init__(self,list_of_cities:"list"):
         self.cities=list_of_cities
     
-    def countries(self) -> List[str]:#所有国家的列表，不能有重复
+    #define the list of total counties and no repeat countries
+    def countries(self) -> List[str]:
         countries_set = []
         for c in self.cities:
             c=c.country
             if not c in countries_set:
                 countries_set.append(c)
         return countries_set
-
-    def total_attendees(self) -> int:#所有国家的所有参会者的总数
+    
+    #define the total attendees from all the countries
+    def total_attendees(self) -> int:
         total=0
         for c in self.cities:
             total+=c.attendee
         return total
-
-    def total_distance_travel_to(self, city: City) -> float:#所有地方飞到主办地(苏黎世)的距离总和
+    
+    #define the total distance from one city to the host city
+    def total_distance_travel_to(self, city: City) -> float:
         total_distance_travel_to=0
         for c in self.cities:
             total_distance_travel_to+=c.distance_to(city)
         return total_distance_travel_to
-
-    def travel_by_country(self, city: City) -> Dict[str, float]:#每个国家飞到主办地(苏黎世)的距离和
+    
+    #define the total distance of every country
+    def travel_by_country(self, city: City) -> Dict[str, float]:
         sum={}
         for c in self.cities:  
             travel_by_country={}    
@@ -84,12 +89,14 @@ class CityCollection:
                 sum[c.country]=c.distance_to(city)
         return sum
     
+    #define the total CO2 emitted by all the cities
     def total_co2(self, city: City) -> float:#所有地方飞到主办地(苏黎世)排放的CO2总和
         total_co2=0
         for c in self.cities:
             total_co2+=c.co2_to(city)
         return total_co2
-
+    
+    #define the CO2 emitted by each country
     def co2_by_country(self, city: City) -> Dict[str, float]:#每个国家排放的CO2总和
         sum={}
         for c in self.cities:
@@ -124,8 +131,23 @@ class CityCollection:
         for i in range(len(sum)):   
             top_country.append(sum[i][0])
             CO2_emission.append(sum[i][1])
-        plt.bar(range(len(CO2_emission)),CO2_emission,tick_label=top_country)
+        if n<len(top_country):
+            top_country=top_country[:n]
+            top_country.append("Everywhere else")
+            CO2_emission2=CO2_emission[:n]
+            a=CO2_emission[n:]
+            total=0.0
+            for i in range(len(a)):
+               total+=a[i]
+            CO2_emission2.append(total)
+        else:
+            CO2_emission2=CO2_emission
+                                
+        plt.bar(range(len(CO2_emission2)),CO2_emission2,tick_label=top_country)
         plt.title("Total emissions from each country",fontsize=15)
-        plt.show()
-        return sum
-
+        file_name=city.cityname.lower().replace(" ","_")
+        if save:
+            plt.savefig('./{}.jpg'.format(file_name))
+        else:
+            plt.show()
+        return file_name
