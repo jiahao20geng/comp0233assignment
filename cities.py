@@ -150,4 +150,4 @@ class CityCollection:
             plt.savefig('./{}.jpg'.format(file_name))
         else:
             plt.show()
-        return file_name
+        
